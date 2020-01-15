@@ -6,3 +6,10 @@ The vizualization is made using D3.js
 ## Repo
 https://github.com/stephan227/d3-puerto-rico-earthquakes.git
 
+## Demo
+![](Demo.gif)
+
+
+## Development
+1) Open ./index.html in a web editor
+2) Open ./index.html using any web browser
