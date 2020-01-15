@@ -7,9 +7,13 @@ The vizualization is made using D3.js
 https://github.com/stephan227/d3-puerto-rico-earthquakes.git
 
 ## Demo
+
+https://hopeful-wescoff-13c5b1.netlify.com/
+
 ![](Demo.gif)
 
 
 ## Development
 1) Open ./index.html in a web editor
 2) Open ./index.html using any web browser
+ 
