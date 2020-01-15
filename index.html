@@ -507,7 +507,7 @@
                         svg.selectAll(".earthquake-circle").transition()
                     } else {
                         moving = true;
-                        timer = setInterval(step, 100);
+                        timer = setInterval(step, 60);
                         
                         button.text("Pause")
                             .attr('class', 'paused')
