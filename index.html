@@ -23,6 +23,9 @@
     
     div.link-container {
         padding: 10px;
+        text-align: center;
+        width: 760px;
+        margin: 0 auto;
     }
     /* Mercator CSS */
     path {
@@ -56,6 +59,7 @@
     /* slider css */
     #start-button {
       width: 760px;
+      font-size: 16px;
       padding-right: 26px;
       border-radius: 3px;
       border: none;
@@ -63,7 +67,7 @@
       /* margin: 0; */
       padding: 0 12px;
       cursor: pointer;
-      height: 30px;
+      height: 40px;
       
     }
     #start-button:focus {
@@ -133,9 +137,9 @@
         <div id="vis" class="svg-chart"></div>
         <div class="button-container">
             <button id="start-button">Start</button>
-            <div class="link-container">
-                <a rel="noopener noreferrer" target="_blank" href="https://github.com/stephan227/d3-puerto-rico-earthquakes">Github Repo</a>
-            </div>
+        </div>
+        <div class="link-container">
+            <a rel="noopener noreferrer" target="_blank" href="https://github.com/stephan227/d3-puerto-rico-earthquakes">Github Repo</a>
         </div>
     </div>
     <!-- <script src="https://d3js.org/d3.v3.min.js"></script> -->
@@ -483,17 +487,17 @@
             startButton
                 .on("click", function() {
                     var button = d3.select(this);
-                    if (button.text() == "Stop") {
+                    if (button.text() == "Pause") {
                         moving = false;
                         clearInterval(timer);
-
                         button.text("Start").style("background-color", "#0c998d")
-
+                        // Disable active transitions to prevent circles from being removed
+                        svg.selectAll(".earthquake-circle").transition()
                     } else {
                         moving = true;
                         timer = setInterval(step, 100);
                         
-                        button.text("Stop")
+                        button.text("Pause")
                             .attr('class', 'paused')
                             .style("background-color", "lightgrey")
 
@@ -507,11 +511,12 @@
             function step() {
                 update(domainTimeScale.invert(currentValue));
                 currentValue = currentValue + 1
-                if (currentValue > targetValue) {
+                if (currentValue >= targetValue) {
                     moving = false;
                     currentValue = 0;
                     clearInterval(timer);
                     startButton.text("Start");
+                    startButton.text("Start").style("background-color", "#0c998d")
                 }
             }
 
