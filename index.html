@@ -108,11 +108,11 @@
         stroke: white;
         opacity: .7;
     }
-    .track {
-      /* stroke: #000;
+    /* .track {
+      stroke: #000;
       stroke-opacity: 0.3;
-      stroke-width: 10px; */
-    }
+      stroke-width: 10px; 
+    } */
 
     .track-inset {
       stroke: #dcdcdc;
@@ -139,6 +139,17 @@
         opacity: .8;
     }
 
+    /* Volume class */
+    .y-axis {
+        stroke: #fff;
+    }
+
+    .y-axis-tick {
+        font-family:"avenir next", Arial, sans-serif;
+        font-size: 6px;
+        font-weight: lighter;
+    }
+
 </style>
 <body>
     <h3 class="chart-title">
@@ -147,6 +158,7 @@
 
     <div class="container">
         <div id="vis" class="svg-chart"></div>
+        <div id="volume-chart" class="svg-chart"></div>
         <div class="button-container">
             <button id="start-button">Start</button>
         </div>
@@ -178,8 +190,6 @@
         var formatDateIntoYear = d3.timeFormat("%Y");
         var formatToDay = d3.timeFormat("%d %b")
         var formatDate = d3.timeFormat("%d %b %y %H")// d3.timeFormat("%b %Y");
-        var parseDate = d3.timeParse("%m/%d/%y");
-        var formateFullDate = d3.timeFormat("%a, %d %b %y %H:00:00")
         
         var moving = false;
         var currentValue = 0;
@@ -195,6 +205,7 @@
         var totalMagFourToFive = 0;
         var totalMagFiveToSix = 0;
         var totalMagGreaterThanSix = 0;
+        var activePeriods = [];
         
 
         // End of Slider Variables
@@ -287,91 +298,60 @@
                 return a.time - b.time;
             });
 
-
-            /** Create location labels */
-            svg.append("text")
-                .attr("class", "label")
-                .text("Location")
-                .attr("text-anchor", "start")
-                .attr("transform", "translate(20, 30)")
-
-            svg.append("text")  
-                .attr("class", "label")
-                .attr("text-anchor", "start")
-                .text('Puerto Rico')
-                .attr("transform", "translate(20, 50)")
-
-                
-            /** Create Counts Labels */
-            // TODO: Create labels programatically using an array [{text: 0, title: 'Total', xPosition: width - 50}]
-            svg.append("text")  
-                .attr("class", "label")
-                .attr("id", "total-earthquake-count")
-                .attr("text-anchor", "middle")
-                .text(totalEarthquakeCount)
-                .attr("transform", "translate(" + (width - 30 )+ ", 30)")
-                
-            svg.append("text")  
-                .attr("class", "label")
-                .attr("text-anchor", "middle")
-                .text("Total")
-                .attr("transform", "translate(" + (width - 30) + ", 50)")
-
-            svg.append("text")  
-                .attr("class", "label")
-                .attr("id", "total-mag-less-than-four-count")
-                .attr("text-anchor", "middle")
-                .text(totalMagLessThanFour)
-                .attr("transform", "translate(" + (width - 270 ) + ", 30)")
-                
-            svg.append("text")  
-                .attr("class", "label")
-                .attr("text-anchor", "middle")
-                .text("Mag. 0-4")
-                .attr("transform", "translate(" + (width - 270 ) + ", 50)")
-                
-
-            svg.append("text")  
-                .attr("class", "label")
-                .attr("id", "total-mag-four-to-five-count")
-                .attr("text-anchor", "middle")
-                .text(totalMagFourToFive)
-                .attr("transform", "translate(" + (width - 210 ) + ", 30)")
-                // .attr("transform", "translate(150, 30)")
-                
-            svg.append("text")  
-                .attr("class", "label")
-                .attr("text-anchor", "middle")
-                .text("Mag. 4-5")
-                .attr("transform", "translate(" + (width - 210 ) + ", 50)")
-                
-            svg.append("text")  
-                .attr("class", "label")
-                .attr("id", "total-mag-five-to-six-count")
-                .attr("text-anchor", "middle")
-                .text(totalMagFiveToSix)
-                .attr("transform", "translate(" + (width - 150 ) + ", 30)")
-                
-            svg.append("text")  
-                .attr("class", "label")
-                .attr("text-anchor", "middle")
-                .text("Mag. 5-6")
-                .attr("transform", "translate(" + (width - 150 ) + ", 50)")
-
-            svg.append("text")  
-                .attr("class", "label")
-                .attr("id", "total-mag-greater-than-six-count")
-                .attr("text-anchor", "middle")
-                .text(totalMagGreaterThanSix)
-                .attr("transform", "translate(" + (width - 90 ) + ", 30)")
-                
-            svg.append("text")  
-                .attr("class", "label")
-                .attr("text-anchor", "middle")
-                .text("Mag. > 6")
-                .attr("transform", "translate(" + (width - 90 ) + ", 50)")
-
+            var earthquakesByPeriodSummary = sorted_data.reduce(function(all, item, index) {
+                var itemPeriod = formatDate(item.time)
+                if (all[itemPeriod] !== undefined) {
+                    all[itemPeriod]++;
+                } else {
+                    all[itemPeriod] = 1;
+                }
+                return all;
+            }, {});
+            var earthquakesByPeriod = Object.entries(earthquakesByPeriodSummary);
             
+            console.log('earthquakesByPeriodSummary' ,earthquakesByPeriodSummary)
+            console.log('earthquakesByPeriod' ,earthquakesByPeriod)
+            /** Create Counts Labels */
+            // Create individual text svg label
+            function createTextSVG (xPos, yPos, text, id, anchor="middle") {
+                svg.append("text")  
+                    .attr("class", "label")
+                    .attr("id", id)
+                    .attr("text-anchor", anchor)
+                    .text(text)
+                    .attr("transform", "translate(" + xPos + ", " + yPos + ")")
+
+            }
+
+            // Creates all labels and titles for total counts per earthquake magnitude
+            function createLabelsAndTitle () {
+                // Create location label & title
+                createTextSVG(20, 30, "Location", "location-text", "start")
+                createTextSVG(20, 50, "Total", "location-title", "start")
+
+                // Create total count label & title
+                createTextSVG(width - 30, 30, totalEarthquakeCount, "total-earthquake-count")
+                createTextSVG(width - 30, 50, "Total", "total-earthquake-count-text")
+
+                // Create total-mag-less-than-four-count label & title
+                createTextSVG(width - 270, 30, totalMagLessThanFour, "total-mag-less-than-four-count")
+                createTextSVG(width - 270, 50, "Mag. 0-4", "total-mag-less-than-four-count-label")
+
+                // Create total-mag-four-to-five-count label & title
+                createTextSVG(width - 210, 30, totalMagFourToFive, "total-mag-four-to-five-count")
+                createTextSVG(width - 210, 50, "Mag. 4-5", "total-mag-four-to-five-count-label")
+
+                // Create total-mag-five-to-six-count label & title
+                createTextSVG(width - 150, 30, totalMagFiveToSix, "total-mag-five-to-six-count")
+                createTextSVG(width - 150, 50, "Mag. 5-6", "total-mag-five-to-six-count-label")
+
+                // Create total-mag-greater-than-six-count label & title
+                createTextSVG(width - 90, 30, totalMagGreaterThanSix, "total-mag-greater-than-six-count")
+                createTextSVG(width - 90, 50, "Mag. > 6", "total-mag-greater-than-six-count-label")
+            }
+            createLabelsAndTitle()
+
+            // Updates all text labels with new counters data
             function updateCountLabels (totalEarthquakeCount, totalMagFourToFive, totalMagFiveToSix, totalMagGreaterThanSix, totalMagLessThanFour) {
                 svg.select("#total-earthquake-count")
                     .text(totalEarthquakeCount)
@@ -382,10 +362,8 @@
                 svg.select("#total-mag-four-to-five-count")
                     .text(totalMagFourToFive)
 
-                
                 svg.select("#total-mag-five-to-six-count")
                     .text(totalMagFiveToSix)
-
 
                 svg.select("#total-mag-greater-than-six-count")
                     .text(totalMagGreaterThanSix)
@@ -421,105 +399,158 @@
                     }
             }
 
+            function CreateSlider () {
+                // Create Slider Component
+                var slider = svg.append("g")
+                    .attr("class", "slider")
+                    .attr("transform", "translate(" + margin.left + "," + (height - 60 )+ ")");
 
-            var startButton = d3.select("#start-button");
-            
-            // Create Slider Component
-            var slider = svg.append("g")
-                .attr("class", "slider")
-                .attr("transform", "translate(" + margin.left + "," + (height - 60 )+ ")");
+                slider.append("line")
+                    .attr("class", "track")
+                    .attr("x1", domainTimeScale.range()[0])
+                    .attr("x2", domainTimeScale.range()[1])
+                .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
+                    .attr("class", "track-inset")
+                .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
+                    .attr("class", "track-overlay")
+                    .call(d3.drag()
+                        .on("start.interrupt", function() { slider.interrupt(); })
+                        .on("start drag", function() {
+                        currentValue = d3.event.x;
+                        update(domainTimeScale.invert(currentValue)); 
+                        })
+                    );
 
-            slider.append("line")
-                .attr("class", "track")
-                .attr("x1", domainTimeScale.range()[0])
-                .attr("x2", domainTimeScale.range()[1])
-            .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
-                .attr("class", "track-inset")
-            .select(function() { return this.parentNode.appendChild(this.cloneNode(true)); })
-                .attr("class", "track-overlay")
-                .call(d3.drag()
-                    .on("start.interrupt", function() { slider.interrupt(); })
-                    .on("start drag", function() {
-                    currentValue = d3.event.x;
-                    update(domainTimeScale.invert(currentValue)); 
-                    })
-                );
+                slider.insert("g", ".track-overlay")
+                    .attr("class", "ticks")
+                    .attr("transform", "translate(0," + 18 + ")")
+                .selectAll("text")
+                    .data(domainTimeScale.ticks(10))
+                    .enter()
+                    .append("text")
+                    .attr("x", domainTimeScale)
+                    .attr("y", 10)
+                    .attr("text-anchor", "middle")
+                    .text(function(d) { return formatToDay(d); });
 
-            slider.insert("g", ".track-overlay")
-                .attr("class", "ticks")
-                .attr("transform", "translate(0," + 18 + ")")
-            .selectAll("text")
-                .data(domainTimeScale.ticks(10))
-                .enter()
-                .append("text")
-                .attr("x", domainTimeScale)
-                .attr("y", 10)
-                .attr("text-anchor", "middle")
-                .text(function(d) { return formatToDay(d); });
-
-            
-            // Create sliding vertical line
-            var handle = slider.insert("ellipse", ".track-overlay")
-                .attr("class", "handle")
-                .attr("rx", .01)
-                .attr("ry", 10)
-                .attr("cy", -10)
-
-            var leftEdge = slider.append("line")
-                    .attr("y1", -20)
-                    .attr("y2", 0)
-                    .attr("x1", 0)
-                    .attr("x2", 0)
-                    .attr("class", "line-edge")
-
-
-            var rightEdge = slider.append("line")
-                    .attr("y1", -20)
-                    .attr("y2", 0)
-                    .attr("x1", slideWidth)
-                    .attr("x2", slideWidth)
-                    .attr("class", "line-edge")
-
-                    
-                        // Circle slider 
-            // var handle = slider.insert("circle", ".track-overlay")
-            //     .attr("class", "handle")
-            //     .attr("r", 9);
-
-            // Slider date Label
-            var label = slider.append("text")  
-                .attr("class", "label")
-                .attr("text-anchor", "middle")
-                .text(formatDate(startDate))
-                .attr("transform", "translate(0," + (-25) + ")")
                 
+                // Create sliding vertical line
+                var handle = slider.insert("ellipse", ".track-overlay")
+                    .attr("id", "slider-handle")
+                    .attr("class", "handle")
+                    .attr("rx", .01)
+                    .attr("ry", 10)
+                    .attr("cy", -10)
+                
+                var leftEdge = slider.append("line")
+                        .attr("y1", -20)
+                        .attr("y2", 0)
+                        .attr("x1", 0)
+                        .attr("x2", 0)
+                        .attr("class", "line-edge")
 
-            d3.select("#start-button").style("background-color", "#0c998d")
-            // Start button event
-            startButton
-                .on("click", function() {
-                    var button = d3.select(this);
-                    if (button.text() == "Pause") {
-                        moving = false;
-                        clearInterval(timer);
-                        button.text("Start").style("background-color", "#0c998d")
-                        // Disable active transitions to prevent circles from being removed
-                        svg.selectAll(".earthquake-circle").transition()
+
+                var rightEdge = slider.append("line")
+                        .attr("y1", -20)
+                        .attr("y2", 0)
+                        .attr("x1", slideWidth)
+                        .attr("x2", slideWidth)
+                        .attr("class", "line-edge")
+
+                // Slider date Label
+                var label = slider.append("text")  
+                    .attr("class", "label")
+                    .attr("id", "slider-label")
+                    .attr("text-anchor", "middle")
+                    .text(formatDate(startDate))
+                    .attr("transform", "translate(0," + (-25) + ")")
+            }
+            
+            function CreateStartButton () {
+                // Start button event
+                var startButton = d3.select("#start-button");
+                
+                d3.select("#start-button").style("background-color", "#0c998d")
+                    startButton
+                    .on("click", function() {
+                        var button = d3.select(this);
+                        if (button.text() == "Pause") {
+                            moving = false;
+                            clearInterval(timer);
+                            button.text("Start").style("background-color", "#0c998d")
+                            // Disable active transitions to prevent circles from being removed
+                            svg.selectAll(".earthquake-circle").transition()
+                        } else {
+                            moving = true;
+                            timer = setInterval(step, 40);
+                            
+                            button.text("Pause")
+                                .attr('class', 'paused')
+                                .style("background-color", "lightgrey")
+
+                            // Remove circles that where created when moving was set to false
+                            svg.selectAll(".earthquake-circle").remove()
+                        }
+                        console.log("Slider moving: " + moving);
+                    })
+            }
+
+            function createVolumeChart () {
+                var height = 50
+                var margin = {top:5, right:50, bottom:5, left:50};
+                var yMax = earthquakesByPeriod.reduce((all, item) => {
+                    if (all > item[1]) {
+                        return all;
                     } else {
-                        moving = true;
-                        timer = setInterval(step, 60);
-                        
-                        button.text("Pause")
-                            .attr('class', 'paused')
-                            .style("background-color", "lightgrey")
+                        return item[1];
+                    }}, 0)
 
-                        // Remove circles that where created when moving was set to false
-                        svg.selectAll(".earthquake-circle").remove()
-                    }
-                    console.log("Slider moving: " + moving);
-                })
+                var xDomain = earthquakesByPeriod.map(d => d[0])
+                
+                var xScale = d3.scaleBand()
+                    .domain( xDomain )
+                    .range([ margin.left, width - margin.right - margin.left ])
+                    .padding(0.5);
+                var yScale = d3.scaleLinear()
+                    .domain([ 0, yMax ])
+                    .range([ height - margin.bottom, margin.top ]);
 
-            // Step executed by setInterval.  Updates every 1 hour every tick
+                // xAxis is not needed now due to the small size of the bar chart
+                // var xAxis = d3.axisBottom(xScale).tickSizeOuter(0);
+                var yAxis = d3.axisLeft(yScale).tickSizeOuter(0).ticks(2);
+                
+                var svg = d3.select("#volume-chart").append("svg")
+                    .attr("width", width)
+                    .attr("height", height);
+
+                svg.append('g')
+                    .attr('class', 'bars')
+                    .selectAll('rect')
+                    .data( earthquakesByPeriod )
+                    .enter().append('rect')
+                    .attr('class', 'bar')
+                    .attr('x', d => xScale(d[0]))
+                    .attr('y', d => yScale(d[1]))
+                    .attr('width', 1)
+                    .attr('height', d => yScale(0) - yScale(d[1]))
+                    .style('fill', '#0c998d')
+                
+                // // Render X-Axis
+                // svg.append('g')
+                //     .attr('class', 'x-axis')
+                //     .attr('transform', `translate(0,${ height - margin.bottom })`)
+                //     .call( xAxis )
+
+                // Render Y-Axis
+                var axisLeftG = svg.append('g')
+                    .attr('class', 'y-axis')
+                    .attr('transform', `translate(${ margin.left },0)`)
+                    .call( yAxis )
+                axisLeftG.selectAll('text').attr('class', 'y-axis-tick')
+                
+            }
+
+            // Step executed by setInterval.  Updates tick every 1 hour
             function step() {
                 update(domainTimeScale.invert(currentValue));
                 currentValue = currentValue + 1
@@ -534,6 +565,8 @@
 
             // update (): Called every time the step is executed.  Sets counters and active earthquake for the current period
             function update(sliderCurrentDate) {
+                var handle = svg.select("#slider-handle");
+                var label = svg.select("#slider-label");
                 // update position and text of label according to slider scale
                 handle.attr("cx", domainTimeScale(sliderCurrentDate));
 
@@ -570,13 +603,14 @@
                         }
                     }
                     
-                    // Filter dataset by the hour
-                    if (item.time > sliderCurrentDate.getTime()
-                        || item.time < sliderCurrentDate.getTime() - 3600000) {
-                        continue;
-                    } else {
-                        currentPeriodEarthquakes.push(item);
+                    // Filter visible circles only if they occurred in the hour period currently active
+                    if (item.time > sliderCurrentDate.getTime()) {
+                        continue
                     }
+                    if (item.time < sliderCurrentDate.getTime() - 3600000) {
+                        continue;
+                    }
+                    currentPeriodEarthquakes.push(item);
                 }
 
                 // Update count labels
@@ -591,6 +625,9 @@
                 // Update earthquake circles
                 addCircle(currentPeriodEarthquakes, sliderCurrentDate.getTime())
             }
+            createVolumeChart()
+            CreateSlider()
+            CreateStartButton()
         });
     });
     </script>
